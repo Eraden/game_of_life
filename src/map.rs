@@ -1,4 +1,12 @@
 use super::cell_state::CellState;
+use crate::app::WindowCanvas;
+use crate::app::CELL_SIZE;
+use crate::app::LEFT_MARGIN;
+use crate::app::TOP_MARGIN;
+use crate::renderer::Render;
+use crate::renderer::Renderer;
+use sdl2::pixels::Color;
+use sdl2::rect::Rect;
 
 #[derive(Clone)]
 pub struct Map {
@@ -124,12 +132,36 @@ impl Map {
         }
         d9
     }
+
+    fn get_draw_rect(x: i32, y: i32) -> Rect {
+        Rect::new(
+            LEFT_MARGIN as i32 + (x * CELL_SIZE as i32),
+            TOP_MARGIN as i32 + (y * CELL_SIZE as i32),
+            CELL_SIZE as u32,
+            CELL_SIZE as u32,
+        )
+    }
+}
+
+impl<'a> Render for Map {
+    fn render(&self, canvas: &mut WindowCanvas, renderer: &mut Renderer) {
+        for y in 0..20 {
+            for x in 0..20 {
+                let rect = Self::get_draw_rect(x, y);
+                self.get_at(x, y).draw(&rect, canvas);
+
+                let frame_color = Color::RGBA(200, 200, 200, 255);
+                renderer.render_frame(canvas, &rect, &frame_color);
+            }
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::cell_state::*;
     use crate::map::*;
+    use sdl2::rect::Rect;
 
     #[test]
     fn it_resolve_valid_neighbours() {
@@ -178,5 +210,13 @@ mod tests {
             map.get_neighbours(20, 20).to_vec(),
             [CellState::Dead; 9].to_vec()
         );
+    }
+
+    #[test]
+    fn it_give_valid_draw_rect() {
+        assert_eq!(Map::get_draw_rect(0, 0), Rect::new(200, 100, 20, 20));
+        assert_eq!(Map::get_draw_rect(1, 0), Rect::new(220, 100, 20, 20));
+        assert_eq!(Map::get_draw_rect(0, 1), Rect::new(200, 120, 20, 20));
+        assert_eq!(Map::get_draw_rect(5, 5), Rect::new(300, 200, 20, 20));
     }
 }
